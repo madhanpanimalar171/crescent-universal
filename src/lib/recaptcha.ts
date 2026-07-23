@@ -24,8 +24,17 @@ export interface ContactFormPayload extends ContactFormValues {
 export async function submitContactForm(
   payload: ContactFormPayload
 ): Promise<{ success: boolean; message: string }> {
-  let backendUrlRaw =
-    import.meta.env.VITE_BACKEND_URL?.trim() || window.location.origin || 'http://localhost:3000';
+  const currentOrigin = window.location.origin;
+  const isLocalhost = currentOrigin.startsWith('http://localhost') || currentOrigin.startsWith('http://127.0.0.1');
+  const configuredBackendUrl = import.meta.env.VITE_BACKEND_URL?.trim();
+  let backendUrlRaw = configuredBackendUrl || (isLocalhost ? currentOrigin : '');
+
+  if (!backendUrlRaw) {
+    const errorMessage =
+      'Missing VITE_BACKEND_URL. The contact form frontend requires VITE_BACKEND_URL to point to the deployed backend URL.';
+    console.error(errorMessage);
+    throw new Error(errorMessage);
+  }
 
   if (/^\/\//.test(backendUrlRaw)) {
     backendUrlRaw = `https:${backendUrlRaw}`;

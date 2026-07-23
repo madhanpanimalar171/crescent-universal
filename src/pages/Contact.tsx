@@ -72,6 +72,7 @@ function ContactContent() {
           ? 'Captcha verification failed. Please try again.'
           : message
       );
+      console.error('Contact submit error:', error);
       setStatus('error');
       if (recaptchaRef.current) {
         recaptchaRef.current.reset();
