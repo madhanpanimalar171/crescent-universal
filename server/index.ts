@@ -15,20 +15,30 @@ const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: Number(process.env.EMAIL_PORT || 465),
-  secure: true,
+  service: 'gmail',
   auth: {
     user: EMAIL_USER,
     pass: EMAIL_PASS,
   },
 });
 
+transporter.verify().then(
+  () => {
+    console.log('✅ Gmail SMTP transporter verified successfully.');
+  },
+  (error) => {
+    console.error('❌ Gmail SMTP transporter verification failed:', error);
+  }
+);
+
 // Middleware
 app.use(express.json());
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+  : ['http://localhost:5173'];
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: corsOrigins,
     credentials: true,
   })
 );
@@ -159,15 +169,29 @@ async function sendEmail(data: ContactFormData) {
     </div>
   `;
 
+  const text = `New Contact Form Submission
+
+Name: ${data.name}
+Email: ${data.email}
+Phone: ${data.phone}
+Message:
+${data.message}
+
+Submission Date & Time: ${submissionDate} UTC
+`;
+
   const mailOptions = {
-    from: EMAIL_USER,
+    from: `"Crescent Universal Contact" <${EMAIL_USER}>`,
     to: EMAIL_USER,
     replyTo: data.email,
     subject: 'New Contact Form Submission',
+    text,
     html,
   };
 
+  console.log('📩 Sending contact email to', EMAIL_USER);
   await transporter.sendMail(mailOptions);
+  console.log('✅ Contact email sent successfully');
 }
 
 // Routes

@@ -24,7 +24,8 @@ export interface ContactFormPayload extends ContactFormValues {
 export async function submitContactForm(
   payload: ContactFormPayload
 ): Promise<{ success: boolean; message: string }> {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  const backendUrl =
+    import.meta.env.VITE_BACKEND_URL || window.location.origin || 'http://localhost:3000';
 
   try {
     const response = await fetch(`${backendUrl}/api/contact`, {
