@@ -25,13 +25,21 @@ export async function submitContactForm(
   payload: ContactFormPayload
 ): Promise<{ success: boolean; message: string }> {
   const currentOrigin = window.location.origin;
-  const isLocalhost = currentOrigin.startsWith('http://localhost') || currentOrigin.startsWith('http://127.0.0.1');
+  const isLocalhost =
+    currentOrigin.startsWith('http://localhost') || currentOrigin.startsWith('http://127.0.0.1');
   const configuredBackendUrl = import.meta.env.VITE_BACKEND_URL?.trim();
   let backendUrlRaw = configuredBackendUrl || (isLocalhost ? currentOrigin : '');
 
   if (!backendUrlRaw) {
     const errorMessage =
-      'Missing VITE_BACKEND_URL. The contact form frontend requires VITE_BACKEND_URL to point to the deployed backend URL.';
+      'Missing VITE_BACKEND_URL. The deployed frontend must set VITE_BACKEND_URL to your backend URL, e.g. https://your-backend-name.onrender.com';
+    console.error(errorMessage);
+    throw new Error(errorMessage);
+  }
+
+  if (!configuredBackendUrl && !isLocalhost) {
+    const errorMessage =
+      'VITE_BACKEND_URL is not configured. On deployed frontend, the backend cannot be resolved. Please add VITE_BACKEND_URL to your deployment environment.';
     console.error(errorMessage);
     throw new Error(errorMessage);
   }
@@ -47,6 +55,12 @@ export async function submitContactForm(
 
   const backendUrl = backendUrlRaw.replace(/\/+$/, '');
   const endpoint = new URL('/api/contact', backendUrl).toString();
+
+  if (!endpoint.startsWith('http')) {
+    const errorMessage = `Invalid backend endpoint: ${endpoint}`;
+    console.error(errorMessage);
+    throw new Error(errorMessage);
+  }
 
   console.log('Contact form backend URL:', backendUrl);
   console.log('Contact form endpoint:', endpoint);
