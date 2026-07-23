@@ -7,7 +7,7 @@ import nodemailer from 'nodemailer';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.BACKEND_PORT || 3000;
+const PORT = Number(process.env.PORT || process.env.BACKEND_PORT || 3000);
 
 // Environment variables
 const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET;

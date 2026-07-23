@@ -9,9 +9,10 @@
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "tsc -b && npm run build:backend && vite build",
     "build:backend": "tsc --project server/tsconfig.json",
+    "start": "npm run start:backend",
+    "start:backend": "npm run build:backend && node server/dist/index.js",
     "lint": "oxlint",
-    "preview": "vite preview",
-    "start:backend": "npm run build:backend && node server/dist/index.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
