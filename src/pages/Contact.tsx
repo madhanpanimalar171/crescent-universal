@@ -1,27 +1,26 @@
-import { useState } from 'react';
+﻿import { useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Phone, MapPin, Loader2, CheckCircle2, AlertCircle, Send } from 'lucide-react';
 import { PageHero } from '@/components/layout/PageHero';
-import { NotRobotCheckbox } from '@/components/ui/NotRobotCheckbox';
 import { siteConfig } from '@/data/site';
-import { sendContactEmail, isEmailjsConfigured } from '@/lib/emailjs';
+import { submitContactForm, isRecaptchaConfigured, RECAPTCHA_SITE_KEY } from '@/lib/recaptcha';
 
 type FormValues = { name: string; email: string; phone: string; message: string };
-type Status = 'idle' | 'submitting' | 'success' | 'error' | 'not-configured';
+type Status = 'idle' | 'submitting' | 'success' | 'error';
 
 const initialValues: FormValues = { name: '', email: '', phone: '', message: '' };
 
-export default function Contact() {
+function ContactContent() {
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [values, setValues] = useState<FormValues>(initialValues);
   const [honeypot, setHoneypot] = useState('');
-  const [verified, setVerified] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showVerifyHint, setShowVerifyHint] = useState(false);
+  const [recaptchaError, setRecaptchaError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>('idle');
-
-  function updateField<K extends keyof FormValues>(key: K, value: FormValues[K]) {
-    setValues((v) => ({ ...v, [key]: value }));
-  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,26 +32,51 @@ export default function Contact() {
       return;
     }
 
-    if (!verified) {
+    if (!isRecaptchaConfigured || !RECAPTCHA_SITE_KEY) {
+      setRecaptchaError(
+        'reCAPTCHA is not configured. Please add a valid v2 Checkbox site key to VITE_RECAPTCHA_SITE_KEY.'
+      );
+      return;
+    }
+
+    if (!recaptchaToken) {
       setShowVerifyHint(true);
       return;
     }
+
     setShowVerifyHint(false);
+    setErrorMessage(null);
     setStatus('submitting');
 
-    if (!isEmailjsConfigured) {
-      setStatus('not-configured');
-      return;
-    }
-
     try {
-      await sendContactEmail(values);
+      await submitContactForm({
+        ...values,
+        recaptchaToken,
+      });
+
       setStatus('success');
       setValues(initialValues);
-      setVerified(false);
-    } catch {
+      setRecaptchaToken(null);
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+      setErrorMessage(
+        message === 'Captcha verification failed.'
+          ? 'Captcha verification failed. Please try again.'
+          : message
+      );
       setStatus('error');
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+      setRecaptchaToken(null);
     }
+  }
+
+  function updateField<K extends keyof FormValues>(key: K, value: FormValues[K]) {
+    setValues((v) => ({ ...v, [key]: value }));
   }
 
   const mapQuery = encodeURIComponent(`${siteConfig.name}, ${siteConfig.address}`);
@@ -211,40 +235,59 @@ export default function Contact() {
                     />
                   </Field>
 
-                  <div>
-                    <NotRobotCheckbox
-                      checked={verified}
-                      onChange={(v) => {
-                        setVerified(v);
-                        if (v) setShowVerifyHint(false);
-                      }}
-                    />
-                    {showVerifyHint && (
-                      <p className="mt-2 text-xs text-bronze-600">
-                        Please confirm you're not a robot before sending.
-                      </p>
-                    )}
-                  </div>
-
-                  {status === 'not-configured' && (
-                    <p className="flex items-start gap-2 rounded-xl bg-navy-50 p-3 text-xs text-navy-600">
-                      <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                      Email sending isn't connected yet — add your EmailJS keys to
-                      <code className="mx-1 rounded bg-white px-1 py-0.5">.env</code>
-                      (see the README), or reach us directly via the details on the left for now.
-                    </p>
+                  {isRecaptchaConfigured && (
+                    <div>
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={RECAPTCHA_SITE_KEY ?? ''}
+                        onChange={(token) => {
+                          setRecaptchaToken(token);
+                          setRecaptchaError(null);
+                          if (token) setShowVerifyHint(false);
+                        }}
+                        onExpired={() => setRecaptchaToken(null)}
+                        onErrored={() => {
+                          setRecaptchaError(
+                            'reCAPTCHA failed to load. Please verify you are using a valid v2 Checkbox site key.'
+                          );
+                        }}
+                      />
+                      {showVerifyHint && !recaptchaToken && (
+                        <p className="mt-2 text-xs text-bronze-600">
+                          Please complete the reCAPTCHA verification.
+                        </p>
+                      )}
+                      {recaptchaError && (
+                        <p className="mt-2 text-xs text-bronze-600">
+                          {recaptchaError}
+                        </p>
+                      )}
+                    </div>
                   )}
+
+                  {!isRecaptchaConfigured && (
+                    <div>
+                      <p className="rounded-xl border border-bronze-100 bg-bronze-50 px-4 py-3 text-sm text-bronze-700">
+                        reCAPTCHA is required for this form. Please add a valid v2 Checkbox
+                        site key to <code className="mx-1 rounded bg-white px-1 py-0.5">VITE_RECAPTCHA_SITE_KEY</code>.
+                      </p>
+                    </div>
+                  )}
+
                   {status === 'error' && (
                     <p className="flex items-start gap-2 rounded-xl bg-bronze-50 p-3 text-xs text-bronze-700">
                       <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                      Something went wrong sending that. Please try again, or reach us directly
-                      via the details on the left.
+                      {errorMessage ?? 'Something went wrong sending that. Please try again, or reach us directly via the details on the left.'}
                     </p>
                   )}
 
                   <button
                     type="submit"
-                    disabled={status === 'submitting'}
+                    disabled={
+                      status === 'submitting' ||
+                      !recaptchaToken ||
+                      !isRecaptchaConfigured
+                    }
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-bronze-500 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-bronze-600 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {status === 'submitting' ? (
@@ -267,6 +310,10 @@ export default function Contact() {
       </section>
     </>
   );
+}
+
+export default function Contact() {
+  return <ContactContent />;
 }
 
 function Field({
