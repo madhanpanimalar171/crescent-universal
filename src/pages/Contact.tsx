@@ -48,6 +48,11 @@ function ContactContent() {
     setErrorMessage(null);
     setStatus('submitting');
 
+    console.log('Submit clicked');
+    console.log('Form Data:', values);
+    console.log('Captcha Token:', recaptchaToken);
+    console.log('Backend URL:', import.meta.env.VITE_BACKEND_URL);
+
     try {
       await submitContactForm({
         ...values,

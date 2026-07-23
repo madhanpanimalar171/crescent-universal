@@ -24,11 +24,16 @@ export interface ContactFormPayload extends ContactFormValues {
 export async function submitContactForm(
   payload: ContactFormPayload
 ): Promise<{ success: boolean; message: string }> {
-  const backendUrl =
-    import.meta.env.VITE_BACKEND_URL || window.location.origin || 'http://localhost:3000';
+  const backendUrlRaw =
+    import.meta.env.VITE_BACKEND_URL?.trim() || window.location.origin || 'http://localhost:3000';
+  const backendUrl = backendUrlRaw.replace(/\/+$/, '');
+  const endpoint = new URL('/api/contact', backendUrl).toString();
+
+  console.log('Contact form backend URL:', backendUrl);
+  console.log('Contact form endpoint:', endpoint);
 
   try {
-    const response = await fetch(`${backendUrl}/api/contact`, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
