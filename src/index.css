@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  /* ---- Brand color system, drawn from the Crescent Universal mark ---- */
+  --color-ink-950: #0a0f24;
+  --color-ink-900: #0e1530;
+  --color-ink-800: #141c40;
+  --color-ink-700: #1c2652;
+
+  --color-navy-950: #0b1330;
+  --color-navy-600: #2a3b8f;
+  --color-navy-500: #34459f;
+  --color-navy-300: #8c9ad1;
+  --color-navy-100: #dce1f2;
+  --color-navy-50: #eef0f9;
+
+  --color-bronze-700: #6e4722;
+  --color-bronze-600: #8a5a2c;
+  --color-bronze-500: #9c6935;
+  --color-bronze-400: #b87f44;
+  --color-bronze-300: #d3a06a;
+  --color-bronze-100: #f0ded0;
+  --color-bronze-50: #faf3ec;
+
+  --color-sky-600: #3d7db8;
+  --color-sky-500: #5b9bd5;
+  --color-sky-400: #7eb8e8;
+  --color-sky-300: #a8d2f0;
+
+  --color-mist-600: #6b7280;
+  --color-mist-400: #a6adbb;
+  --color-mist-200: #e4e7ec;
+  --color-mist-100: #eef0f3;
+
+  --color-paper: #ffffff;
+  --color-paper-soft: #f7f8fb;
+
+  /* ---- Type ---- */
+  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ---- Motion ---- */
+  --ease-signature: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-paper);
+    color: var(--color-ink-900);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background-color: var(--color-bronze-300);
+    color: var(--color-ink-950);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-bronze-400);
+    outline-offset: 3px;
+  }
+}
+
+@layer utilities {
+  .eyebrow {
+    font-family: var(--font-mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
